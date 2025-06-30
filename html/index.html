@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>test geolocation api</title>
+</head>
+<!-- css -->
+<style>
+	*{
+		box-sizing: border-box;
+	}
+
+	.wrapper-content {
+		display: flex;
+		flex-direction: column;
+		row-gap: 30px;
+	}
+
+	.row {
+		display: flex;
+		flex-direction: column;
+		row-gap: 5px;
+		width: 300px;
+		height: 200px;
+	}
+
+	.row-content {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		border: 1px solid black;
+		width: 100%;
+		height: 100%;
+		background-color: rgb(226, 218, 218);
+		padding: 10px;
+	}
+
+	.btn {
+		width: fit-content;
+		padding: 5px 10px;
+		justify-self: end;
+		font-weight: 700;
+	}
+	.error{
+		color: rgb(196, 51, 51);
+	}
+</style>
+<!-- end css -->
+
+
+<body>
+	<div class="wrapper">
+		<div class="warapper-title">
+			<h3>Test Google Geolocation API</h3>
+		</div>
+		<div class="wrapper-content">
+			<div class="row">
+				<button class="btn" type="button" id="get-by-api">Coordinates by Google</button>
+				<div class="row-content">
+					<!-- content here -->
+				</div>
+
+			</div>
+			<div class="row">
+				<button class="btn" type="button" id="get-by-js">Coordinates by JS</button>
+				<div class="row-content">
+					<!-- content here -->
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+
+</html>
+
+<!-- js -->
+<script>
+	document.getElementById('get-by-api').addEventListener('click', async function (e) {
+		let _this = e.target;
+		let rowContent = _this.nextElementSibling;
+
+		try {
+			start = performance.now();
+			let result = await fetch('endpoint.php', {
+				method: "GET",
+			});
+
+			if (!result.ok) return;
+
+			end = performance.now();
+			duration = end - start;
+			let data = await result.json();
+
+			rowContent.innerHTML = '';
+			if (data.code != 0) {
+				rowContent.innerHTML = ` <div class="error"><strong>Error:</strong> ${data.message}</div>`;
+				return
+			}
+			rowContent.innerHTML = ` 
+					<div class="lat"><strong>Latitude:</strong> ${data.location.lat}</div>
+					<div class="lng"><strong>Longitude:</strong> ${data.location.lng}</div>
+					<div class="accuracy"><strong>Accuracy:</strong> ${data.location.accuracy} (m)</div>
+					<div class="time-response"><strong>Response time:</strong> ${data.location.speed} (s)</div>
+				`;
+
+		} catch (e) {
+			console.log(e)
+		}
+
+	})
+
+	document.getElementById('get-by-js').addEventListener('click', async function (e) {
+		let _this = e.target;
+		let rowContent = _this.nextElementSibling;
+
+		if (navigator.geolocation) {
+			rowContent.innerHTML = '';
+			let start = performance.now();
+			navigator.geolocation.getCurrentPosition(
+				(position) => success(position, rowContent, start),
+				(err) => error(err, rowContent),
+				{
+					enableHighAccuracy: true,
+					timeout: 10000,
+					maximumAge: 0
+				}
+			)
+		}
+	})
+
+	const success = (position, rowContent, start) => {
+		let end = performance.now();
+		let duration = (end - start) / 1000;
+
+		rowContent.innerHTML = ` 
+					<div class="lat"><strong>Latitude:</strong> ${position.coords.latitude}</div>
+					<div class="lng"><strong>Longitude:</strong> ${position.coords.longitude}</div>
+					<div class="accuracy"><strong>Accuracy:</strong> ${position.coords.accuracy.toFixed(2)} (m)</div>
+					<div class="time-response"><strong>Response time:</strong> ${duration.toFixed(2)} (s)</div>
+				`;
+	}
+
+	const error = (err, rowContent) => {
+		rowContent.innerHTML = ` <div class="error"><strong>Error:</strong> ${err.message}</div>`;
+	}
+
+</script>
+<!-- end js -->
